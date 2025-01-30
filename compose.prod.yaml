@@ -1,0 +1,43 @@
+services:
+  user:
+    container_name: user
+    build:
+      context: .
+      dockerfile: Dockerfile.prod
+    ports:
+      - '${APP_PORT}:3000'
+    networks:
+      - public
+      - internal
+    environment:
+      - NODE_ENV=production
+    logging:
+      driver: 'json-file'
+      options:
+        max-size: '10m' # Limit each log file to 10MB
+        max-file: '3' # Keep a maximum of 3 log files
+    deploy:
+      replicas: 1 # To scale to more replicas we need Traefik/Swarm setup!
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+      restart_policy:
+        condition: on-failure
+        max_attempts: 3
+    healthcheck:
+      test: ['CMD', 'wget', '-q', '--spider', 'http://localhost:3000/health']
+      interval: 30s
+      timeout: 3s
+      retries: 3
+    # Add depends_on if you have a database
+    # depends_on:
+    #   - postgres
+
+networks:
+  public:
+    name: public-network # Custom name for public network
+    driver: bridge # Default bridge network, accessible from outside
+  internal:
+    name: private-network # Custom name for internal network
+    external: true # Network is created by infro/compose.dev.yaml

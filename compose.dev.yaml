@@ -1,0 +1,34 @@
+services:
+  user-dev:
+    container_name: user-dev
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    volumes:
+      - .:/usr/src/app
+      - /usr/src/app/node_modules
+    ports:
+      - '${APP_PORT_DEV}:3000'
+    networks:
+      - public
+      - internal
+    command: npm run start:dev
+    environment:
+      - NODE_ENV=development
+    logging:
+      driver: 'local'
+      options:
+        max-size: '10m'
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+
+networks:
+  public:
+    name: public-network # Custom name for public network
+    driver: bridge # Default bridge network, accessible from outside
+  internal:
+    name: private-network # Custom name for internal network
+    external: true # Network is created by infro/compose.dev.yaml

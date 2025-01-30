@@ -1,0 +1,54 @@
+# Ignore version control files
+.git
+.gitignore
+
+# Ignore Docker-specific files
+Dockerfile*
+docker-compose*
+.docker
+.dockerignore
+
+# Ignore dependencies and build artifacts
+node_modules
+dist
+coverage
+
+# Ignore environment and secrets files
+.env
+*.env*
+!.env.example  # Allow including a sanitized example file
+
+# Ignore logs and temporary files
+npm-debug.log
+yarn-debug.log
+yarn-error.log
+pnpm-debug.log
+logs
+*.log
+*.pid
+*.seed
+*.lock
+
+# Ignore editor and IDE settings
+.vscode
+.idea
+*.swp
+*.swo
+.idea
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+
+# Ignore unnecessary config and documentation files
+.editorconfig
+README.md
+LICENSE
+.eslintrc.js
+.prettierrc*
+.nodemon.json
+
+# Ignore Mac and Linux system files
+.DS_Store
+Thumbs.db
+*.~undo-tree*
