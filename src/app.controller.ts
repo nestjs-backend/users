@@ -48,7 +48,7 @@ export class AppController {
       message: 'user Service',
       timestamp: new Date().toISOString(),
       containerId,
-      requestIp: eth0?.address,
+      containerIp: eth0?.address,
     };
 
     throw new RpcException({
