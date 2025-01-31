@@ -26,9 +26,9 @@ jobs:
       - name: Increment version and tag
         id: version_increment # Give this step an ID
         run: |
-          if [[ ! -z "${{ github.event.head_commit.message }}" && ! ${{ contains(github.event.head_commit.message, '[skip ci]') }} ]]; then # Skip version bump if commit message contains [skip ci]
-            VERSION=$(npm version patch --no-git-tag | cut -d ' ' -f 2) # Increment PATCH version
-            echo "::set-output name=new_version::$VERSION" # Set output for later steps
+          if [[ ! -z "${{ github.event.head_commit.message }}" && ! ${{ contains(github.event.head_commit.message, '[skip ci]') }} ]]; then
+            VERSION=$(npm version patch --no-git-tag | cut -d ' ' -f 2)
+            echo "::set-output name=new_version::$VERSION"
             git config --global user.name 'github-actions[bot]'
             git config --global user.email 'github-actions[bot]@users.noreply.github.com'
             git add package.json
@@ -36,6 +36,9 @@ jobs:
             git tag $VERSION
             git push origin $VERSION
             git push origin main
+          else
+            echo "::set-output name=new_version::" # Set an empty version if skipped
+            echo "Version bump skipped."
           fi
 
       - name: Build Docker image
