@@ -1,4 +1,4 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, HttpStatus } from '@nestjs/common';
 // import { CreateUserDto } from './dto/create-user.dto';
 import {
   MessagePattern,
@@ -8,6 +8,9 @@ import {
   RpcException,
 } from '@nestjs/microservices';
 import { AppService } from './app.service';
+
+import * as os from 'os';
+import * as fs from 'fs/promises';
 
 @Controller()
 export class AppController {
@@ -26,11 +29,24 @@ export class AppController {
   }
 
   @MessagePattern('user.error')
-  errorTrigger(@Ctx() context: NatsContext) {
+  async errorTrigger() {
     console.log('errorTrigger');
+    const containerId = os.hostname();
+    console.log('containerId:', containerId);
+    const configContent = await fs.readFile('/proc/1/environ', 'utf8');
+    console.log('configContent:', configContent);
+
+    // Get IP address
+    const networks = os.networkInterfaces();
+    const eth0 = networks.eth0?.find((addr) => addr.family === 'IPv4');
+    if (eth0) {
+      console.log('eth0:', eth0.address);
+    }
+
     throw new RpcException({
       status: 'error',
-      message: 'This should be the error message!',
+      statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+      message: containerId,
     });
   }
 

@@ -4,8 +4,6 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.prod
-    ports:
-      - '${APP_PORT}:3000'
     networks:
       - public
       - internal
