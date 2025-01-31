@@ -1,14 +1,11 @@
 services:
   user-dev:
-    container_name: user-dev
     build:
       context: .
       dockerfile: Dockerfile.dev
     volumes:
       - .:/usr/src/app
       - /usr/src/app/node_modules
-    ports:
-      - '${APP_PORT_DEV}:3000'
     networks:
       - public
       - internal
@@ -20,6 +17,7 @@ services:
       options:
         max-size: '10m'
     deploy:
+      replicas: 2 # To scale to more replicas
       resources:
         limits:
           cpus: '1'
