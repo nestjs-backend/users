@@ -1,0 +1,53 @@
+name: CI/CD
+
+on:
+  push:
+    branches:
+      - main # Or your main development branch
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 16 # Or your preferred version
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci # Or yarn install
+
+      - name: Run tests (optional)
+        run: npm test # Or yarn test
+
+      - name: Increment version and tag
+        id: version_increment # Give this step an ID
+        run: |
+          if [[ ! -z "${{ github.event.head_commit.message }}" && ! ${{ contains(github.event.head_commit.message, '[skip ci]') }} ]]; then # Skip version bump if commit message contains [skip ci]
+            VERSION=$(npm version patch --no-git-tag | cut -d ' ' -f 2) # Increment PATCH version
+            echo "::set-output name=new_version::$VERSION" # Set output for later steps
+            git config --global user.name 'github-actions[bot]'
+            git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+            git add package.json
+            git commit -m "chore: Release $VERSION"
+            git tag $VERSION
+            git push origin $VERSION
+            git push origin main
+          fi
+
+      - name: Build Docker image
+        run: |
+          VERSION=${{ steps.version_increment.outputs.new_version }} # Use the new version
+          docker build --build-arg VERSION=$VERSION -t your-registry/your-service:$VERSION .
+          docker push your-registry/your-service:$VERSION
+
+      - name: Deploy (example with Docker Compose)
+        if: steps.version_increment.outputs.new_version # Only deploy if the version was bumped
+        run: |
+          VERSION=${{ steps.version_increment.outputs.new_version }}
+          # Update docker-compose.yml with the new version (replace with your actual deployment)
+          sed -i "s/your-registry\/your-service:.*$/your-registry\/your-service:$VERSION/g" docker-compose.yml
+          docker-compose up -d
