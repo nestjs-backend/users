@@ -23,9 +23,8 @@ export class AppController {
 
   @MessagePattern('user.healthcheck')
   healthCheck(@Ctx() context: NatsContext) {
-    const headers = context.getHeaders();
     const subject = context.getSubject();
-    return { message: 'OK', headers, subject };
+    return { message: 'OK', subject };
   }
 
   @MessagePattern('user.error')
@@ -43,10 +42,20 @@ export class AppController {
       console.log('eth0:', eth0.address);
     }
 
+    // Developer friendly error
+    const error = {
+      code: 'ERR-001',
+      message: 'user Service',
+      timestamp: new Date().toISOString(),
+      containerId,
+      requestIp: eth0?.address,
+    };
+
     throw new RpcException({
       status: 'error',
       statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
-      message: containerId,
+      message: 'We encountered an error, please try again later',
+      error,
     });
   }
 
