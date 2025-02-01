@@ -43,6 +43,8 @@ async function bootstrap() {
     'APP_NAME:',
     configService.getOrThrow('app.appName', { infer: true }),
   );
+  // Make APP_NAME available as global
+  global.APP_NAME = configService.getOrThrow('app.appName', { infer: true });
 
   try {
     await app.listen();
