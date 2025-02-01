@@ -21,10 +21,10 @@ export class AppService {
 
     // Develop env error
     const error = {
-      code: 'ERR-001',
-      developerMessage: 'Debug developer friendly message',
-      timestamp: new Date().toISOString(),
       service: appName,
+      code: 'ERR-001',
+      message: 'Debug developer friendly message',
+      timestamp: new Date().toISOString(),
       containerId,
       containerIp: eth0?.address,
     };
