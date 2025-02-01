@@ -1,4 +1,4 @@
-import { Controller } from '@nestjs/common';
+import { Controller, UseInterceptors } from '@nestjs/common';
 import {
   MessagePattern,
   EventPattern,
@@ -6,8 +6,9 @@ import {
   NatsContext,
 } from '@nestjs/microservices';
 import { AppService } from './app.service';
-
+import { MicroserviceCorrelationInterceptor } from 'src/interceptor/correlation-id.microservice.interceptor';
 @Controller()
+@UseInterceptors(MicroserviceCorrelationInterceptor)
 export class AppController {
   constructor(private readonly appService: AppService) {}
 

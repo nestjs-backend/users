@@ -3,6 +3,8 @@ import { Transport } from '@nestjs/microservices';
 import { ConfigService } from '@nestjs/config';
 import { AppModule } from './app.module';
 import { AllConfigType } from './config/config.type';
+import { MicroserviceCorrelationInterceptor } from 'src/interceptor/correlation-id.microservice.interceptor';
+import { ClsService } from 'nestjs-cls';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -13,11 +15,17 @@ async function bootstrap() {
       servers: [
         `nats://${configService.getOrThrow<string>('app.natsHost', { infer: true })}:${configService.getOrThrow<string>('app.natsPort', { infer: true })}`,
       ],
+      queue: 'user_queue',
     },
   });
 
   // Enable shutdown hooks
   app.enableShutdownHooks();
+
+  // Apply interceptor to all NATS messages
+  app.useGlobalInterceptors(
+    new MicroserviceCorrelationInterceptor(app.get(ClsService)),
+  );
 
   // Print NODE_ENV
   console.log(
