@@ -5,7 +5,9 @@ import {
   Transport,
   NatsStatus,
 } from '@nestjs/microservices';
+import { ConfigService } from '@nestjs/config';
 import { AppModule } from './app.module';
+import { AllConfigType } from './config/config.type';
 
 async function bootstrap() {
   const app = await NestFactory.createMicroservice<MicroserviceOptions>(
@@ -22,12 +24,25 @@ async function bootstrap() {
       },
     },
   );
+  const configService = app.get(ConfigService<AllConfigType>);
   app.status.subscribe((status: NatsStatus) => {
     console.log(`NATS server status: ${status}`);
   });
 
   // Enable shutdown hooks
   app.enableShutdownHooks();
+
+  // Print NODE_ENV
+  console.log(
+    'NODE_ENV:',
+    configService.getOrThrow('app.nodeEnv', { infer: true }),
+  );
+
+  // Print APP_NAME
+  console.log(
+    'APP_NAME:',
+    configService.getOrThrow('app.appName', { infer: true }),
+  );
 
   try {
     await app.listen();

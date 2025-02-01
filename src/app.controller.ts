@@ -10,7 +10,6 @@ import {
 import { AppService } from './app.service';
 
 import * as os from 'os';
-import * as fs from 'fs/promises';
 
 @Controller()
 export class AppController {
@@ -28,21 +27,14 @@ export class AppController {
   }
 
   @MessagePattern('user.error')
-  async errorTrigger() {
-    console.log('errorTrigger');
-    const containerId = os.hostname();
-    console.log('containerId:', containerId);
-    const configContent = await fs.readFile('/proc/1/environ', 'utf8');
-    console.log('configContent:', configContent);
+  errorTrigger() {
+    const containerId = os.hostname() || 'unknown';
 
-    // Get IP address
+    // Get container IP address
     const networks = os.networkInterfaces();
     const eth0 = networks.eth0?.find((addr) => addr.family === 'IPv4');
-    if (eth0) {
-      console.log('eth0:', eth0.address);
-    }
 
-    // Developer friendly error
+    // Develop env error
     const error = {
       code: 'ERR-001',
       message: 'user Service',
