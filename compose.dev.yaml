@@ -7,7 +7,7 @@ services:
       - .:/usr/src/app
       - /usr/src/app/node_modules
     networks:
-      # - public
+      - public
       - internal
     command: npm run start:dev
     environment:
@@ -24,9 +24,9 @@ services:
           memory: 1G
 
 networks:
-  # public:
-  #   name: public-network # Custom name for public network
-  #   driver: bridge # Default bridge network, accessible from outside
+  public:
+    name: public-network # Custom name for public network
+    driver: bridge # Default bridge network, accessible from outside
   internal:
     name: private-network # Custom name for internal network
     external: true # Network is created by infro/compose.dev.yaml

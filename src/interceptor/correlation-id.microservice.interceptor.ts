@@ -19,7 +19,6 @@ export class MicroserviceCorrelationInterceptor implements NestInterceptor {
 
     return this.cls.run(() => {
       this.cls.set('correlationId', correlationId);
-      console.log('correlationId:', correlationId);
       return next.handle();
     });
   }

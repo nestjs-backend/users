@@ -4,4 +4,5 @@ export type AppConfig = {
   appQueue: string;
   natsHost: string;
   natsPort: number;
+  mongodbUri: string;
 };

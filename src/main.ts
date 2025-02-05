@@ -5,8 +5,12 @@ import { AppModule } from './app.module';
 import { AllConfigType } from './config/config.type';
 import { MicroserviceCorrelationInterceptor } from 'src/interceptor/correlation-id.microservice.interceptor';
 import { ClsService } from 'nestjs-cls';
+import tracer from './tracer/tracer';
 
 async function bootstrap() {
+  // Setup tracing before creating the app
+  tracer.start(); // Start the tracer
+
   const app = await NestFactory.create(AppModule);
   const configService = app.get(ConfigService<AllConfigType>);
   app.connectMicroservice({
@@ -42,6 +46,7 @@ async function bootstrap() {
   global.APP_NAME = configService.getOrThrow('app.appName', { infer: true });
 
   await app.startAllMicroservices(); // Start the microservice
+  await app.init();
 
   console.log('NATS microservice started..');
 }

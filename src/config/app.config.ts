@@ -27,6 +27,9 @@ class EnvironmentVariablesValidator {
   @Min(1024)
   @Max(65535)
   NATS_PORT: number;
+
+  @IsString()
+  MONGODB_URI: string;
 }
 
 export default registerAs<AppConfig>('app', () => {
@@ -38,5 +41,6 @@ export default registerAs<AppConfig>('app', () => {
     appQueue: process.env.APP_QUEUE || 'app_queue',
     natsHost: process.env.NATS_HOST || 'localhost',
     natsPort: parseInt(process.env.NATS_PORT || '4222', 10),
+    mongodbUri: process.env.MONGODB_URI || 'mongodb://localhost:27017/app',
   };
 });
