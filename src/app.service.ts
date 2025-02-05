@@ -85,7 +85,10 @@ export class AppService {
 
   async userGetByEmail(message: any, natsContext: NatsContext): Promise<any> {
     console.log('userGetByEmail', message);
+    // wait 10 sec
+    await new Promise((resolve) => setTimeout(resolve, 10000));
     const subject = natsContext.getSubject();
+    console.log('subject:', subject);
 
     const carrier = message.traceContext || {};
 
@@ -111,28 +114,25 @@ export class AppService {
               });
 
               if (!user) {
-                console.log('User not found!');
                 dbSpan.recordException('User not found');
-                // throw new NotFoundException('User not found');
                 // Develop env error
                 const debug = {
                   service: this.appName,
-                  code: 'ERR-001',
-                  message: 'User not found',
+                  code: 'ERR-000',
+                  message: `${subject} User not found`,
                   timestamp: new Date().toISOString(),
                   containerId: this.containerId,
                   containerIp: this.containerIp,
                 };
 
                 throw new RpcException({
-                  status: 'error',
-                  statusCode: HttpStatus.NOT_FOUND,
-                  message: 'User not found',
+                  status: HttpStatus.NOT_FOUND,
+                  message: 'User not found!',
                   debug,
                 });
               }
 
-              return { message: user, subject };
+              return user;
             } catch (error) {
               dbSpan.recordException(error);
               throw error;
