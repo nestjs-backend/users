@@ -6,9 +6,9 @@ import { NodeSDK } from '@opentelemetry/sdk-node';
 import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions';
 
 // Enable logging for debugging
-import { diag, DiagConsoleLogger, DiagLogLevel } from '@opentelemetry/api';
+// import { diag, DiagConsoleLogger, DiagLogLevel } from '@opentelemetry/api';
 
-diag.setLogger(new DiagConsoleLogger(), DiagLogLevel.DEBUG);
+// diag.setLogger(new DiagConsoleLogger(), DiagLogLevel.DEBUG);
 
 // Configure the SDK to export telemetry data to the console
 // Enable all auto-instrumentations from the meta package

@@ -31,7 +31,7 @@ export class AppController {
   }
 
   @MessagePattern('user.getByEmail')
-  userGetByEmail(email: string) {
-    return this.appService.userGetByEmail(email);
+  userGetByEmail(@Payload() message: any, @Ctx() context: NatsContext) {
+    return this.appService.userGetByEmail(message, context);
   }
 }

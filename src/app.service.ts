@@ -1,17 +1,29 @@
-import { Injectable, HttpStatus, NotFoundException } from '@nestjs/common';
+import { Injectable, HttpStatus } from '@nestjs/common';
 import { NatsContext, RpcException } from '@nestjs/microservices';
 import { InjectModel } from '@nestjs/mongoose';
 import * as os from 'os';
 import { Model } from 'mongoose';
-import { hash, compare } from 'bcryptjs';
+import { hash } from 'bcryptjs';
 import { trace, context, propagation } from '@opentelemetry/api';
 import { User } from './schema/user.schema';
 import { CreateUserDto } from './dto/create-user.dto';
+import { ConfigService } from '@nestjs/config';
 @Injectable()
 export class AppService {
+  private appName: string;
+  private readonly containerId = os.hostname() || 'unknown container';
+  private readonly containerIp = os
+    .networkInterfaces()
+    .eth0?.find((addr) => addr.family === 'IPv4')?.address;
+
   constructor(
     @InjectModel(User.name) private readonly userModel: Model<User>,
-  ) {}
+    private readonly configService: ConfigService,
+  ) {
+    this.appName = this.configService.getOrThrow<string>('appName', {
+      infer: true,
+    });
+  }
 
   healthCheck(message: any, natsContext: NatsContext) {
     const subject = natsContext.getSubject();
@@ -30,9 +42,8 @@ export class AppService {
       console.log('Processing message:', message.data);
 
       span.end();
-      return { status: 'success' };
+      return { message: 'OK', subject };
     });
-    return { message: 'OK', subject };
   }
 
   generateError(): string {
@@ -46,7 +57,7 @@ export class AppService {
     const eth0 = networks.eth0?.find((addr) => addr.family === 'IPv4');
 
     // Develop env error
-    const error = {
+    const debug = {
       service: appName,
       code: 'ERR-001',
       message: 'Debug developer friendly message',
@@ -59,7 +70,7 @@ export class AppService {
       status: 'error',
       statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
       message: 'We encountered an error, please try again later',
-      error,
+      debug,
     });
   }
 
@@ -72,13 +83,71 @@ export class AppService {
     return user.save();
   }
 
-  async userGetByEmail(email: string): Promise<User> {
-    console.log('userGetByEmail');
-    const user = await this.userModel.findOne({ email });
-    if (!user) {
-      throw new NotFoundException('User not found');
-    }
-    console.log('userGetByEmail', user);
-    return user;
+  async userGetByEmail(message: any, natsContext: NatsContext): Promise<any> {
+    console.log('userGetByEmail', message);
+    const subject = natsContext.getSubject();
+
+    const carrier = message.traceContext || {};
+
+    // Extract the trace context from the message
+    const ctx = propagation.extract(context.active(), carrier); // Extract the trace context from the message
+
+    // Create a new span under the extracted context
+    const tracer = trace.getTracer('microservice');
+
+    return context.with(ctx, async () => {
+      const span = tracer.startSpan('user/getByEmail');
+
+      try {
+        const data = message.data;
+
+        // Start a new span for MongoDB query
+        return tracer.startActiveSpan(
+          'MongoDB: userModel.findOne',
+          async (dbSpan) => {
+            try {
+              const user = await this.userModel.findOne({
+                email: data.email,
+              });
+
+              if (!user) {
+                console.log('User not found!');
+                dbSpan.recordException('User not found');
+                // throw new NotFoundException('User not found');
+                // Develop env error
+                const debug = {
+                  service: this.appName,
+                  code: 'ERR-001',
+                  message: 'User not found',
+                  timestamp: new Date().toISOString(),
+                  containerId: this.containerId,
+                  containerIp: this.containerIp,
+                };
+
+                throw new RpcException({
+                  status: 'error',
+                  statusCode: HttpStatus.NOT_FOUND,
+                  message: 'User not found',
+                  debug,
+                });
+              }
+
+              return { message: user, subject };
+            } catch (error) {
+              dbSpan.recordException(error);
+              throw error;
+            } finally {
+              dbSpan.end();
+            }
+          },
+        );
+      } catch (error) {
+        console.log('Error fetching user:', error);
+        span.recordException(error);
+        throw error;
+      } finally {
+        span.end(); // Ensure the span is properly closed
+      }
+    });
   }
 }

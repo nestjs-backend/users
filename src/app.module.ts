@@ -6,21 +6,21 @@ import { ClsModule, ClsService } from 'nestjs-cls';
 import { MongooseModule } from '@nestjs/mongoose';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import appConfig from './config/app.config';
+import { configuration } from './config/configuration';
 import { MicroserviceCorrelationInterceptor } from 'src/interceptor/correlation-id.microservice.interceptor';
-import { Mongoose } from 'mongoose';
+// import { Mongoose } from 'mongoose';
 import { User, UserSchema } from './schema/user.schema';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      load: [appConfig],
+      load: [configuration],
       envFilePath: ['.env'],
     }),
     MongooseModule.forRootAsync({
       useFactory: (configService: ConfigService) => ({
-        uri: `${configService.getOrThrow<string>('app.mongodbUri', { infer: true })}`,
+        uri: `${configService.getOrThrow<string>('mongoUri', { infer: true })}`,
       }),
       inject: [ConfigService],
     }),

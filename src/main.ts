@@ -1,24 +1,23 @@
 import { NestFactory } from '@nestjs/core';
 import { Transport } from '@nestjs/microservices';
-import { ConfigService } from '@nestjs/config';
+// import { ConfigService } from '@nestjs/config';
 import { AppModule } from './app.module';
-import { AllConfigType } from './config/config.type';
 import { MicroserviceCorrelationInterceptor } from 'src/interceptor/correlation-id.microservice.interceptor';
 import { ClsService } from 'nestjs-cls';
+import { validateEnv } from './config/env.validation';
 import tracer from './tracer/tracer';
 
 async function bootstrap() {
+  const validatedEnv = validateEnv(process.env); // Validate environment variables first
   // Setup tracing before creating the app
   tracer.start(); // Start the tracer
 
   const app = await NestFactory.create(AppModule);
-  const configService = app.get(ConfigService<AllConfigType>);
+  // const configService = app.get(ConfigService<AllConfigType>);
   app.connectMicroservice({
     transport: Transport.NATS,
     options: {
-      servers: [
-        `nats://${configService.getOrThrow<string>('app.natsHost', { infer: true })}:${configService.getOrThrow<string>('app.natsPort', { infer: true })}`,
-      ],
+      servers: [`nats://${validatedEnv.NATS_HOST}:${validatedEnv.NATS_PORT}`],
       queue: 'user_queue',
     },
   });
@@ -31,22 +30,8 @@ async function bootstrap() {
     new MicroserviceCorrelationInterceptor(app.get(ClsService)),
   );
 
-  // Print NODE_ENV
-  console.log(
-    'NODE_ENV:',
-    configService.getOrThrow('app.nodeEnv', { infer: true }),
-  );
-
-  // Print APP_NAME
-  console.log(
-    'APP_NAME:',
-    configService.getOrThrow('app.appName', { infer: true }),
-  );
-  // Make APP_NAME available as global
-  global.APP_NAME = configService.getOrThrow('app.appName', { infer: true });
-
   await app.startAllMicroservices(); // Start the microservice
-  await app.init();
+  // await app.init();
 
   console.log('NATS microservice started..');
 }
