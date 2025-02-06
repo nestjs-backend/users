@@ -4,6 +4,7 @@ import { Resource } from '@opentelemetry/resources';
 import { MongoDBInstrumentation } from '@opentelemetry/instrumentation-mongodb';
 import { NodeSDK } from '@opentelemetry/sdk-node';
 import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions';
+import { WinstonInstrumentation } from '@opentelemetry/instrumentation-winston';
 
 // Enable logging for debugging
 // import { diag, DiagConsoleLogger, DiagLogLevel } from '@opentelemetry/api';
@@ -25,6 +26,9 @@ const sdk = new NodeSDK({
       // Optional: configure how MongoDB operations are traced
       enhancedDatabaseReporting: true,
     }),
+    new WinstonInstrumentation({
+      // Instrumentation for Winston
+    }),
   ],
   resource: new Resource({
     [SemanticResourceAttributes.SERVICE_NAME]: 'nestjs-backend-user',
@@ -32,7 +36,6 @@ const sdk = new NodeSDK({
 });
 
 // initialize the SDK and register with the OpenTelemetry API
-// this enables the API to record telemetry
 sdk.start();
 
 // gracefully shut down the SDK on process exit

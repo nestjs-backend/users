@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Logger, Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { APP_INTERCEPTOR } from '@nestjs/core';
 import { ConfigService } from '@nestjs/config';
@@ -36,6 +36,7 @@ import { User, UserSchema } from './schema/user.schema';
   ],
   controllers: [AppController],
   providers: [
+    Logger,
     AppService,
     {
       provide: APP_INTERCEPTOR,

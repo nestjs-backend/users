@@ -1,4 +1,4 @@
-import { Controller, UseInterceptors } from '@nestjs/common';
+import { Controller, UseInterceptors, Logger } from '@nestjs/common';
 import {
   MessagePattern,
   EventPattern,
@@ -13,11 +13,14 @@ import { CreateUserDto } from './dto/create-user.dto';
 @Controller()
 @UseInterceptors(MicroserviceCorrelationInterceptor)
 export class AppController {
-  constructor(private readonly appService: AppService) {}
+  constructor(
+    private readonly appService: AppService,
+    private readonly logger: Logger,
+  ) {}
 
   @MessagePattern('user.healthcheck')
-  healthCheck(@Payload() message: any, @Ctx() context: NatsContext) {
-    return this.appService.healthCheck(message, context);
+  healthCheck(@Payload() message: any) {
+    return this.appService.healthCheck(message);
   }
 
   @MessagePattern('user.error')

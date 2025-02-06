@@ -1,4 +1,10 @@
-import { Injectable, HttpStatus } from '@nestjs/common';
+import {
+  Inject,
+  Injectable,
+  HttpStatus,
+  Logger,
+  LoggerService,
+} from '@nestjs/common';
 import { NatsContext, RpcException } from '@nestjs/microservices';
 import { InjectModel } from '@nestjs/mongoose';
 import * as os from 'os';
@@ -17,6 +23,7 @@ export class AppService {
     .eth0?.find((addr) => addr.family === 'IPv4')?.address;
 
   constructor(
+    @Inject(Logger) private readonly logger: LoggerService,
     @InjectModel(User.name) private readonly userModel: Model<User>,
     private readonly configService: ConfigService,
   ) {
@@ -25,25 +32,14 @@ export class AppService {
     });
   }
 
-  healthCheck(message: any, natsContext: NatsContext) {
-    const subject = natsContext.getSubject();
-
-    const carrier = message.traceContext || {};
-
-    // Extract the trace context from the message
-    const ctx = propagation.extract(context.active(), carrier);
-
-    // Create a new span under the extracted context
+  healthCheck(message: any) {
     const tracer = trace.getTracer('microservice');
-    return context.with(ctx, () => {
-      const span = tracer.startSpan('user/healthCheck');
-
-      // Simulate processing
-      console.log('Processing message:', message.data);
-
-      span.end();
-      return { message: 'OK', subject };
-    });
+    const span = tracer.startSpan('user/healthCheck');
+    this.logger.log(
+      'user/healthCheck called with message: ' + JSON.stringify(message),
+    );
+    span.end();
+    return { message: 'OK' };
   }
 
   generateError(): string {
@@ -75,7 +71,7 @@ export class AppService {
   }
 
   async userCreate(data: CreateUserDto): Promise<User> {
-    console.log('userCreate');
+    this.logger.log('userCreate');
     const user = new this.userModel({
       ...data,
       password: await hash(data.password, 10),
@@ -84,11 +80,11 @@ export class AppService {
   }
 
   async userGetByEmail(message: any, natsContext: NatsContext): Promise<any> {
-    console.log('userGetByEmail', message);
+    this.logger.log('userGetByEmail', message);
     // wait 10 sec
-    await new Promise((resolve) => setTimeout(resolve, 10000));
+    // await new Promise((resolve) => setTimeout(resolve, 10000));
     const subject = natsContext.getSubject();
-    console.log('subject:', subject);
+    this.logger.log('subject:', subject);
 
     const carrier = message.traceContext || {};
 
@@ -132,6 +128,7 @@ export class AppService {
                 });
               }
 
+              this.logger.log('User found!');
               return user;
             } catch (error) {
               dbSpan.recordException(error);
@@ -142,7 +139,7 @@ export class AppService {
           },
         );
       } catch (error) {
-        console.log('Error fetching user:', error);
+        this.logger.error('Error fetching user:', error);
         span.recordException(error);
         throw error;
       } finally {

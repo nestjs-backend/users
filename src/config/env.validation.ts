@@ -9,6 +9,9 @@ class EnvironmentVariables {
   APP_NAME: string;
 
   @IsString()
+  APP_VERSION: string;
+
+  @IsString()
   NATS_HOST: string;
 
   @IsNumber()

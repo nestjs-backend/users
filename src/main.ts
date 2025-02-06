@@ -1,18 +1,22 @@
 import { NestFactory } from '@nestjs/core';
+import { Logger } from '@nestjs/common';
 import { Transport } from '@nestjs/microservices';
 // import { ConfigService } from '@nestjs/config';
 import { AppModule } from './app.module';
 import { MicroserviceCorrelationInterceptor } from 'src/interceptor/correlation-id.microservice.interceptor';
 import { ClsService } from 'nestjs-cls';
 import { validateEnv } from './config/env.validation';
-import tracer from './tracer/tracer';
+import { LoggerFactory } from './logger/logger.factory';
+import { otelSDK } from './tracer/metrics';
 
 async function bootstrap() {
   const validatedEnv = validateEnv(process.env); // Validate environment variables first
-  // Setup tracing before creating the app
-  tracer.start(); // Start the tracer
 
-  const app = await NestFactory.create(AppModule);
+  otelSDK.start();
+
+  const app = await NestFactory.create(AppModule, {
+    logger: LoggerFactory(validatedEnv.APP_NAME, validatedEnv.NODE_ENV),
+  });
   // const configService = app.get(ConfigService<AllConfigType>);
   app.connectMicroservice({
     transport: Transport.NATS,
@@ -30,9 +34,14 @@ async function bootstrap() {
     new MicroserviceCorrelationInterceptor(app.get(ClsService)),
   );
 
-  await app.startAllMicroservices(); // Start the microservice
   // await app.init();
+  await app.startAllMicroservices(); // Start the microservice
 
-  console.log('NATS microservice started..');
+  Logger.log('NATS microservice started..');
+  // Graceful shutdown
+  process.on('SIGTERM', async () => {
+    await app.close();
+    process.exit(0);
+  });
 }
 void bootstrap();
